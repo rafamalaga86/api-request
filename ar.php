@@ -57,7 +57,6 @@ if (!file_exists(__DIR__ . '/token.txt')) {
 
     // Go directly to obtain a token
     $needToken = true;
-
 } else {
     $needToken = false;
 }
@@ -67,9 +66,7 @@ $repeat = true;
 $count = 0;
 
 do {
-
     if (!$needToken) {
-
         $token = file_get_contents(__DIR__ . '/token.txt');
 
         // CURL EXEC
@@ -104,11 +101,9 @@ do {
     // CHECK RESULTS
 
     if ($needToken || $status === 401) {
-
         $token = getToken($host, $username, $password);
         file_put_contents(__DIR__ . '/token.txt', $token);
         $needToken = false;
-
     } elseif ($result === false) {
         echo "HTTP Status Code: $status" . PHP_EOL;
         echo "Curl Error: ";
@@ -120,16 +115,13 @@ do {
         }
 
         die();
-
     } else {
-
         echo "HTTP Status Code: $status" . PHP_EOL;
         print_r($result . PHP_EOL);
         $repeat = false;
     }
 
     ++$count;
-
 } while ($repeat && $count < 4);
 
 if ($count >= 4) {
