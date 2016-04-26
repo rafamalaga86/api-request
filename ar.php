@@ -3,35 +3,38 @@
 
 if (!file_exists(__DIR__ . '/config.php')) {
     die('Copy config.dist.php to config.php and include your data to make the script work' . PHP_EOL);
+} else {
+    require __DIR__ . '/config.php';
 }
 
-require __DIR__ . '/config.php';
+$options = getopt('v:j');
 
 // Check the Verb we will use. Will be GET if no verb specified
 if ($argc <= 1) {
-    die('You need to pass the endpoint as an argument' . PHP_EOL);
-} elseif ($argc == 2) {
-    $verb = 'GET';
-    $url = $argv[1];
-} elseif ($argc == 3) {
-    $verb = strtoupper($argv[1]);
-    $url = $argv[2];
-} else {
-    die('Unexpected number of arguments' . PHP_EOL);
+    die('You need to pass at least the endpoint as an argument' . PHP_EOL);
 }
 
+if (isset($options['v'])) {
+    $verb = strtoupper($options['v']);
+} else {
+    $verb = 'GET';
+}
+
+$json = isset($options['j']); // Bool are we passing the body in JSON?
+$url = end($argv); // The URL should be the last argument
 
 // Check if it is a proper VERB and if the body exist
 
-if ($verb != 'GET') {
-    if ($verb != 'POST' && $verb != 'PUT' && $verb != 'PATCH' && $verb != 'DELETE') {
+$validVerbs = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+$bodyNeededVerbs = ['POST', 'PUT', 'PATCH'];
+
+if (!in_array($verb, $validVerbs)) {
         die('The verb is not valid' . PHP_EOL);
-    } elseif (!file_exists(__DIR__ . '/requestbody.json')) {
-        die('The request body should be in a a file called requestbody.json in the same directory' . PHP_EOL);
-    }
 }
 
-
+if (in_array($verb, $bodyNeededVerbs) && !file_exists(__DIR__ . '/requestbody.json')) {
+        die('The request body should be in a a file called requestbody.json in the same directory' . PHP_EOL);
+}
 
 $parsedUrl = parse_url(urlencode($url));
 
@@ -74,20 +77,25 @@ do {
         curl_setopt($curl, CURLOPT_URL, "$request");
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 
+        $header = [];
+        $header[] = 'Authorization: Bearer ' . $token;
+
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $verb);
+
         if ($verb != 'GET' && $verb != 'DELETE') {
-            curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $verb);
             $requestBody = file_get_contents(__DIR__ . '/requestbody.json');
             curl_setopt($curl, CURLOPT_VERBOSE, 1);
-            curl_setopt($curl, CURLOPT_HTTPHEADER, [
-                'Authorization: Bearer ' . $token,
-                'Content-Type: application/json',
-                'Content-Length: ' . strlen($requestBody)
-                ]);
+
             curl_setopt($curl, CURLOPT_POSTFIELDS, $requestBody);
-        } else {
-            curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $verb);
-            curl_setopt($curl, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $token]);
+
+            if ($json) {
+                $header[] = 'Content-Type: application/json';
+            }
+
+            $header[] = 'Content-Length: ' . strlen($requestBody);
         }
+
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
 
         $result = curl_exec($curl);
         $status = (curl_getinfo($curl)['http_code']);
