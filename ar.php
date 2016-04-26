@@ -128,13 +128,6 @@ if ($count >= 4) {
     die('Too many tries. Something is failing in the script.' . PHP_EOL);
 }
 
-
-
-
-
-
-
-
 function getToken($host, $username, $password)
 {
     $curl = curl_init();
