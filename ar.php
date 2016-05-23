@@ -7,7 +7,7 @@ if (!file_exists(__DIR__ . '/config.php')) {
     require __DIR__ . '/config.php';
 }
 
-$options = getopt('v:j');
+$options = getopt('v:jn');
 
 // Check the Verb we will use. Will be GET if no verb specified
 if ($argc <= 1) {
@@ -20,8 +20,9 @@ if (isset($options['v'])) {
     $verb = 'GET';
 }
 
-$json = isset($options['j']); // Bool are we passing the body in JSON?
-$url = end($argv); // The URL should be the last argument
+$forceToken = isset($options['n']); // Force to take a new token
+$json       = isset($options['j']); // Bool are we passing the body in JSON?
+$url        = end($argv);           // The URL should be the last argument
 
 // Check if it is a proper VERB and if the body exist
 
@@ -60,6 +61,10 @@ if (!file_exists(__DIR__ . '/token.txt')) {
 
     // Go directly to obtain a token
     $needToken = true;
+
+} elseif ($forceToken) {
+    $needToken = true;
+
 } else {
     $needToken = false;
 }
@@ -150,13 +155,17 @@ function getToken($host, $username, $password)
 
     curl_close($curl);
 
+    if (!isset($result->access_token)) {
+        die('A new token could not be obtained' . PHP_EOL);
+    }
+
     $token = $result->access_token;
 
     if ($status === 200) {
         // file_put_contents(, data)
         echo 'New token obtained: ' . $token . PHP_EOL;
     } else {
-        die('Could not get a new token.' . PHP_EOL . 'Status: ' . $status . PHP_EOL);
+        die('Could not get a new token. Check your user credentials.' . PHP_EOL . 'Status: ' . $status . PHP_EOL);
     }
 
     return $token;
