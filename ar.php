@@ -40,7 +40,7 @@ if (in_array($verb, $bodyNeededVerbs) && !file_exists(__DIR__ . '/requestbody.js
 $parsedUrl = parse_url(urlencode($url));
 
 if (!$parsedUrl) {
-    die('PHP indica que la URL esta mal formada' . PHP_EOL);
+    die('PHP says that the URL is not proper' . PHP_EOL);
 } elseif (array_key_exists('host', $parsedUrl)) {
     $request = $url;
     $host = $parsedUrl['scheme'] . '://' . $parsedUrl['host'] . ':' . $parsedUrl['port'];
@@ -50,6 +50,7 @@ if (!$parsedUrl) {
 }
 
 if (!filter_var("$request", FILTER_VALIDATE_URL)) {
+    echo $request;
     die('That is not a valid endpoint. Dont forget to start with \'http://\' o \'https://\'.' . PHP_EOL);
 }
 
@@ -61,10 +62,8 @@ if (!file_exists(__DIR__ . '/token.txt')) {
 
     // Go directly to obtain a token
     $needToken = true;
-
 } elseif ($forceToken) {
     $needToken = true;
-
 } else {
     $needToken = false;
 }
@@ -152,20 +151,25 @@ function getToken($host, $username, $password)
 
     $result = json_decode(curl_exec($curl));
     $status = (curl_getinfo($curl)['http_code']);
+    $curlErrors = curl_error($curl);
 
     curl_close($curl);
 
-    if (!isset($result->access_token)) {
-        die('A new token could not be obtained' . PHP_EOL);
+    if ($result === null) {
+        echo 'Error details: ' . $curlErrors . PHP_EOL;
+        die();
+    } elseif ($result !== null && !isset($result->access_token)) {
+        echo 'HTTP Status Code: ' . $result->status . PHP_EOL;
+        echo 'Error details: ' . $result->detail . PHP_EOL;
+        die();
     }
 
     $token = $result->access_token;
 
     if ($status === 200) {
-        // file_put_contents(, data)
         echo 'New token obtained: ' . $token . PHP_EOL;
     } else {
-        die('Could not get a new token. Check your user credentials.' . PHP_EOL . 'Status: ' . $status . PHP_EOL);
+        die('HTTP Status Code: ' . $status . PHP_EOL . 'Could not get a new token.' . PHP_EOL);
     }
 
     return $token;
