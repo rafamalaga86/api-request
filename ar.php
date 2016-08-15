@@ -123,7 +123,7 @@ do {
         echo PHP_EOL;
 
         if ($status == 0) {
-            echo "Connection refused. Check if the vagrant API machine is up.\n";
+            echo "Check if the vagrant API machine is up.\n";
         }
 
         die();
@@ -155,7 +155,8 @@ function getToken($host, $username, $password)
 
     curl_close($curl);
 
-    if ($result === null) {
+    if ($result === null || $result === false) {
+        echo 'HTTP Status Code: ' . $status . PHP_EOL;
         echo 'Error details: ' . $curlErrors . PHP_EOL;
         die();
     } elseif ($result !== null && !isset($result->access_token)) {
